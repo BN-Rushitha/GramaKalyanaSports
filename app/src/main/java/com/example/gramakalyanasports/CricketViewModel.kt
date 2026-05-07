@@ -2,8 +2,15 @@ package com.example.gramakalyanasports
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
 class CricketViewModel : ViewModel() {
+    // 1. Firebase Initialization
+    private val database = Firebase.database.reference
+    private val matchRef = database.child("live_matches").child("current_cricket_match")
+
     var matchStarted by mutableStateOf(false)
     var teamA by mutableStateOf("Team A")
     var teamB by mutableStateOf("Team B")
@@ -20,14 +27,26 @@ class CricketViewModel : ViewModel() {
     var showExtraDialog by mutableStateOf(false)
     var pendingExtraType by mutableStateOf("")
 
+    // 2. This function sends everything to Firebase
+    private fun syncToFirebase() {
+        val matchData = mapOf(
+            "teamA" to teamA,
+            "teamB" to teamB,
+            "totalRuns" to totalRuns,
+            "totalWickets" to totalWickets,
+            "ballsBowled" to ballsBowled,
+            "isLive" to matchStarted,
+            "oversDisplay" to getOversDisplay(),
+            "currentOver" to currentOverBalls.toList()
+        )
+        matchRef.setValue(matchData)
+    }
+
     fun recordLegalBall(runs: Int, isWicket: Boolean = false) {
         val totalBallsAllowed = totalOversLimit * 6
-
-        // Prevent adding more balls if match is over
         if (ballsBowled >= totalBallsAllowed) return
 
         saveSnapshot()
-
         if (!isFreeHit || !isWicket) {
             if (isWicket) totalWickets += 1
         }
@@ -37,24 +56,17 @@ class CricketViewModel : ViewModel() {
         currentOverBalls.add(if (isWicket && !isFreeHit) "W" else runs.toString())
         isFreeHit = false
 
-        // 2. Fix: Reset display/Match end logic
         if (ballsBowled >= totalBallsAllowed) {
             matchStarted = false
         } else if (ballsBowled % 6 == 0) {
-            // Reset the "row of 6 balls" display after each over
             currentOverBalls.clear()
         }
-    }
 
-    fun openExtraPrompt(type: String) {
-        pendingExtraType = type
-        showExtraDialog = true
+        syncToFirebase() // Sync after ball
     }
 
     fun resolveExtra(extraRuns: Int) {
         val totalBallsAllowed = totalOversLimit * 6
-
-        // Block extras if the over/match is already finished
         if (ballsBowled >= totalBallsAllowed) {
             showExtraDialog = false
             return
@@ -62,12 +74,18 @@ class CricketViewModel : ViewModel() {
 
         val penalty = if (pendingExtraType == "Manual") 0 else 1
         totalRuns += (extraRuns + penalty)
-
         val ballLabel = if (pendingExtraType == "Manual") "$extraRuns" else "$pendingExtraType+$extraRuns"
         currentOverBalls.add(ballLabel)
 
         saveSnapshot()
         showExtraDialog = false
+        syncToFirebase() // Sync after extra
+    }
+
+    // 3. Special Function for the END MATCH button
+    fun finalizeMatch() {
+        matchStarted = false
+        syncToFirebase() // This tells the Viewers the match is over!
     }
 
     fun getOversDisplay(): String = "${ballsBowled / 6}.${ballsBowled % 6}"
@@ -81,6 +99,7 @@ class CricketViewModel : ViewModel() {
             currentOverBalls.clear()
             currentOverBalls.addAll(last.overList)
             isFreeHit = last.freeHit
+            syncToFirebase()
         }
     }
 
@@ -88,5 +107,3 @@ class CricketViewModel : ViewModel() {
         matchHistory.add(MatchSnapshot(totalRuns, totalWickets, ballsBowled, currentOverBalls.toList(), isFreeHit))
     }
 }
-
-data class MatchSnapshot(val runs: Int, val wickets: Int, val balls: Int, val overList: List<String>, val freeHit: Boolean)

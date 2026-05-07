@@ -3,6 +3,7 @@ package com.example.gramakalyanasports
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,6 +17,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val cricketViewModel: CricketViewModel = viewModel()
+
+            // State to control the End Match Pop-up
+            var showEndMatchDialog by remember { mutableStateOf(false) }
 
             NavHost(navController = navController, startDestination = "role_selection") {
                 composable("role_selection") {
@@ -48,11 +52,8 @@ class MainActivity : ComponentActivity() {
                         onStartMatch = { teamA, teamB, overs ->
                             cricketViewModel.teamA = teamA
                             cricketViewModel.teamB = teamB
-
-                            // EXPLICIT FIX: Treat 'overs' as Any then String to be safe with toIntOrNull
                             val inputOvers = overs.toString()
                             cricketViewModel.totalOversLimit = inputOvers.toIntOrNull() ?: 5
-
                             cricketViewModel.matchStarted = true
                             navController.navigate("cricket_match/true/$teamA/$teamB")
                         }
@@ -71,6 +72,7 @@ class MainActivity : ComponentActivity() {
                     val tA = backStackEntry.arguments?.getString("teamA") ?: "Team A"
                     val tB = backStackEntry.arguments?.getString("teamB") ?: "Team B"
 
+                    // The Match Panel Screen
                     CricketMatchPanel(
                         isAdmin = isAdmin,
                         teamAName = tA,
@@ -78,9 +80,29 @@ class MainActivity : ComponentActivity() {
                         viewModel = cricketViewModel,
                         onBackClicked = {
                             navController.popBackStack("role_selection", inclusive = false)
+                        },
+                        // We trigger the dialog from inside your match panel
+                        onEndMatchTriggered = {
+                            showEndMatchDialog = true
                         }
                     )
                 }
+            }
+
+            // Logic to show the dialog globally
+            if (showEndMatchDialog) {
+                EndMatchDialog(
+                    onConfirm = {
+                        showEndMatchDialog = false
+                        // SYSTEMATIC RESET: Move to past matches logic
+                        cricketViewModel.matchStarted = false
+                        // Navigate back to the start and clear the stack
+                        navController.navigate("role_selection") {
+                            popUpTo("role_selection") { inclusive = true }
+                        }
+                    },
+                    onDismiss = { showEndMatchDialog = false }
+                )
             }
         }
     }

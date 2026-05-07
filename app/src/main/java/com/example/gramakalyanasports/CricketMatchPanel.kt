@@ -21,6 +21,7 @@ fun CricketMatchPanel(
     teamAName: String,
     teamBName: String,
     onBackClicked: () -> Unit,
+    onEndMatchTriggered: () -> Unit, // ADDED THIS LINE
     viewModel: CricketViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -47,7 +48,7 @@ fun CricketMatchPanel(
                 text = { Text("Enter additional runs taken:") },
                 confirmButton = {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        (0..4).forEach { run -> // Added 4 as an option
+                        (0..4).forEach { run ->
                             TextButton(onClick = { viewModel.resolveExtra(run) }) {
                                 Text("$run")
                             }
@@ -59,7 +60,7 @@ fun CricketMatchPanel(
 
         // --- LIVE MATCH CARD ---
         Card(
-            modifier = Modifier.fillMaxWidth().height(210.dp), // Increased height for Free Hit text
+            modifier = Modifier.fillMaxWidth().height(210.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1B5E20)),
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
@@ -77,14 +78,12 @@ fun CricketMatchPanel(
 
                 Text("Overs: ${viewModel.getOversDisplay()}", color = Color.White.copy(alpha = 0.8f), fontSize = 18.sp)
 
-                // Point 3: Free Hit Alert
                 if (viewModel.isFreeHit) {
                     Text("FREE HIT!", color = Color.Yellow, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Point 1 & 2: Shows current 6 balls with detailed extra runs (e.g. Wd+1)
                 CurrentOverBalls(balls = viewModel.currentOverBalls)
             }
         }
@@ -95,7 +94,6 @@ fun CricketMatchPanel(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Scorer Dashboard", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
-                // Point 5: Undo Button
                 TextButton(onClick = { viewModel.undoLastAction() }) {
                     Text("UNDO", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
@@ -109,19 +107,29 @@ fun CricketMatchPanel(
                 Button(onClick = { viewModel.recordLegalBall(6) }) { Text("6") }
             }
 
-            // Point 3 & 4: Extras, Wickets, and Manual
+            // Extras, Wickets
             Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Button(onClick = { viewModel.openExtraPrompt("WD") }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) { Text("WD") }
                 Button(onClick = { viewModel.openExtraPrompt("NB") }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) { Text("NB") }
                 Button(onClick = { viewModel.recordLegalBall(0, isWicket = true) }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("WKT") }
             }
 
-            // Point 4: Manual Entry Button
+            // Manual Entry
             OutlinedButton(
                 onClick = { viewModel.openExtraPrompt("Manual") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
                 Text("Enter Runs Manually (e.g. 3 runs)")
+            }
+
+            // --- UNIVERSAL END MATCH BUTTON ---
+            Button(
+                onClick = { onEndMatchTriggered() },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)), // Red color for end action
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("END MATCH", color = Color.White, fontWeight = FontWeight.Bold)
             }
 
         } else {
@@ -145,7 +153,7 @@ fun CurrentOverBalls(balls: List<String>) {
         balls.forEach { ball ->
             Box(
                 modifier = Modifier
-                    .size(38.dp) // Slightly larger to fit text like "Wd+1"
+                    .size(38.dp)
                     .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(19.dp)),
                 contentAlignment = Alignment.Center
             ) {
