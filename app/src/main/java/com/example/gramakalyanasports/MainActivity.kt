@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import com.example.gramakalyanasports.ui.theme.GramaKalyanaSportsTheme
+import com.example.gramakalyanasports.LiveScoringScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +40,7 @@ fun AppScreen() {
                     when (selectedRole) {
                         "Admin" -> currentScreen = Screen.AdminMatchSetup
                         "Player" -> currentScreen = Screen.PlayerStats
-                        "Viewer" -> currentScreen = Screen.LiveScores
+                        "Viewer" -> currentScreen = Screen.FanView
                     }
                 }
             )
@@ -66,8 +67,8 @@ fun AppScreen() {
             )
         }
 
-        Screen.LiveScores -> {
-            LiveScoresScreen(
+        Screen.FanView -> {
+            FanViewScreen(
                 onBackClicked = { currentScreen = Screen.SportsSelection }
             )
         }
@@ -80,5 +81,5 @@ enum class Screen {
     AdminMatchSetup,
     LiveScoring,
     PlayerStats,
-    LiveScores
+    FanView
 }

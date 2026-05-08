@@ -25,6 +25,7 @@ fun SportsSelection(onBackClicked: () -> Unit, onSportSelected: (String) -> Unit
             Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
         }
 
+
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally

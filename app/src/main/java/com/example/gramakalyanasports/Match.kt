@@ -1,4 +1,4 @@
-package com.example.gramakalyanasports.models
+package com.example.gramakalyanasports
 
 enum class SportType {
     KABADDI, VOLLEYBALL, CRICKET

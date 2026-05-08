@@ -1,9 +1,14 @@
 package com.example.gramakalyanasports
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
@@ -22,7 +27,7 @@ fun EndMatchDialog(
                 Text("Final Score:")
                 Text("Team A: $teamAScore", fontWeight = FontWeight.Bold)
                 Text("Team B: $teamBScore", fontWeight = FontWeight.Bold)
-                Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "WINNER: $winner",
                     color = Color(0xFF4CAF50),
