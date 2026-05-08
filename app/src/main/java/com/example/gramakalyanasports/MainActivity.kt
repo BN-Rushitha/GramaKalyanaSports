@@ -4,106 +4,81 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import com.example.gramakalyanasports.ui.theme.GramaKalyanaSportsTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val navController = rememberNavController()
-            val cricketViewModel: CricketViewModel = viewModel()
-
-            // State to control the End Match Pop-up
-            var showEndMatchDialog by remember { mutableStateOf(false) }
-
-            NavHost(navController = navController, startDestination = "role_selection") {
-                composable("role_selection") {
-                    RoleSelectionScreen(onNavigateToSports = { isAdmin ->
-                        navController.navigate("sports_selection/$isAdmin")
-                    })
-                }
-
-                composable("sports_selection/{isAdmin}") { backStackEntry ->
-                    val isAdmin = backStackEntry.arguments?.getString("isAdmin") == "true"
-                    SportsSelection(
-                        onBackClicked = { navController.popBackStack() },
-                        onSportSelected = { sport ->
-                            if (sport == "Cricket") {
-                                if (isAdmin && cricketViewModel.matchStarted) {
-                                    navController.navigate("cricket_match/true/${cricketViewModel.teamA}/${cricketViewModel.teamB}")
-                                } else if (isAdmin) {
-                                    navController.navigate("cricket_setup")
-                                } else {
-                                    navController.navigate("cricket_match/false/Team A/Team B")
-                                }
-                            }
-                        }
-                    )
-                }
-
-                composable("cricket_setup") {
-                    CricketSetupScreen(
-                        onBackClicked = { navController.popBackStack() },
-                        onStartMatch = { teamA, teamB, overs ->
-                            cricketViewModel.teamA = teamA
-                            cricketViewModel.teamB = teamB
-                            val inputOvers = overs.toString()
-                            cricketViewModel.totalOversLimit = inputOvers.toIntOrNull() ?: 5
-                            cricketViewModel.matchStarted = true
-                            navController.navigate("cricket_match/true/$teamA/$teamB")
-                        }
-                    )
-                }
-
-                composable(
-                    route = "cricket_match/{isAdmin}/{teamA}/{teamB}",
-                    arguments = listOf(
-                        navArgument("isAdmin") { type = NavType.BoolType },
-                        navArgument("teamA") { type = NavType.StringType },
-                        navArgument("teamB") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val isAdmin = backStackEntry.arguments?.getBoolean("isAdmin") ?: false
-                    val tA = backStackEntry.arguments?.getString("teamA") ?: "Team A"
-                    val tB = backStackEntry.arguments?.getString("teamB") ?: "Team B"
-
-                    // The Match Panel Screen
-                    CricketMatchPanel(
-                        isAdmin = isAdmin,
-                        teamAName = tA,
-                        teamBName = tB,
-                        viewModel = cricketViewModel,
-                        onBackClicked = {
-                            navController.popBackStack("role_selection", inclusive = false)
-                        },
-                        // We trigger the dialog from inside your match panel
-                        onEndMatchTriggered = {
-                            showEndMatchDialog = true
-                        }
-                    )
-                }
-            }
-
-            // Logic to show the dialog globally
-            if (showEndMatchDialog) {
-                EndMatchDialog(
-                    onConfirm = {
-                        showEndMatchDialog = false
-                        // SYSTEMATIC RESET: Move to past matches logic
-                        cricketViewModel.matchStarted = false
-                        // Navigate back to the start and clear the stack
-                        navController.navigate("role_selection") {
-                            popUpTo("role_selection") { inclusive = true }
-                        }
-                    },
-                    onDismiss = { showEndMatchDialog = false }
-                )
+            GramaKalyanaSportsTheme {
+                AppScreen()
             }
         }
     }
+}
+
+@Composable
+fun AppScreen() {
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.RoleSelection) }
+    var selectedRole by remember { mutableStateOf("") }
+    var selectedSport by remember { mutableStateOf("") }
+
+    when (currentScreen) {
+        Screen.RoleSelection -> {
+            RoleSelectionScreen { role ->
+                selectedRole = role
+                currentScreen = Screen.SportsSelection
+            }
+        }
+
+        Screen.SportsSelection -> {
+            SportsSelection(
+                onBackClicked = { currentScreen = Screen.RoleSelection },
+                onSportSelected = { sport ->
+                    selectedSport = sport
+                    when (selectedRole) {
+                        "Admin" -> currentScreen = Screen.AdminMatchSetup
+                        "Player" -> currentScreen = Screen.PlayerStats
+                        "Viewer" -> currentScreen = Screen.LiveScores
+                    }
+                }
+            )
+        }
+
+        Screen.AdminMatchSetup -> {
+            MatchSetupScreen(
+                sport = selectedSport,
+                onBackClicked = { currentScreen = Screen.SportsSelection },
+                onMatchStarted = { currentScreen = Screen.LiveScoring }
+            )
+        }
+
+        Screen.LiveScoring -> {
+            LiveScoringScreen(
+                sport = selectedSport,
+                onMatchEnd = { currentScreen = Screen.RoleSelection }
+            )
+        }
+
+        Screen.PlayerStats -> {
+            PlayerStatsScreen(
+                onBackClicked = { currentScreen = Screen.SportsSelection }
+            )
+        }
+
+        Screen.LiveScores -> {
+            LiveScoresScreen(
+                onBackClicked = { currentScreen = Screen.SportsSelection }
+            )
+        }
+    }
+}
+
+enum class Screen {
+    RoleSelection,
+    SportsSelection,
+    AdminMatchSetup,
+    LiveScoring,
+    PlayerStats,
+    LiveScores
 }
