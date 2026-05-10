@@ -23,6 +23,9 @@ fun AppScreen() {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.RoleSelection) }
     var selectedRole by remember { mutableStateOf("") }
     var selectedSport by remember { mutableStateOf("") }
+    var matchOvers by remember { mutableStateOf(10f) }
+    var matchBattingTeam by remember { mutableStateOf("") }
+    var matchBowlingTeam by remember { mutableStateOf("") }
 
     when (currentScreen) {
         Screen.RoleSelection -> {
@@ -50,13 +53,21 @@ fun AppScreen() {
             MatchSetupScreen(
                 sport = selectedSport,
                 onBackClicked = { currentScreen = Screen.SportsSelection },
-                onMatchStarted = { currentScreen = Screen.LiveScoring }
+                onMatchStarted = { battingTeam, bowlingTeam, overs ->
+                    matchBattingTeam = battingTeam
+                    matchBowlingTeam = bowlingTeam
+                    matchOvers = overs
+                    currentScreen = Screen.LiveScoring
+                }
             )
         }
 
         Screen.LiveScoring -> {
             LiveScoringScreen(
                 sport = selectedSport,
+                teamAName = matchBattingTeam,
+                teamBName = matchBowlingTeam,
+                oversLimit = matchOvers,
                 onMatchEnd = { currentScreen = Screen.RoleSelection }
             )
         }

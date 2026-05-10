@@ -13,11 +13,13 @@ import androidx.compose.ui.unit.dp
 fun MatchSetupScreen(
     sport: String,
     onBackClicked: () -> Unit,
-    onMatchStarted: () -> Unit
+    onMatchStarted: (battingTeam: String, bowlingTeam: String, overs: Float) -> Unit
 ) {
-    var teamAName by remember { mutableStateOf("") }
-    var teamBName by remember { mutableStateOf("") }
+    var battingTeamName by remember { mutableStateOf("") }
+    var bowlingTeamName by remember { mutableStateOf("") }
     var tournamentName by remember { mutableStateOf("") }
+    var oversInput by remember { mutableStateOf("10") }
+    var oversError by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -49,27 +51,62 @@ fun MatchSetupScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = teamAName,
-                onValueChange = { teamAName = it },
-                label = { Text("Team A Name") },
+                value = battingTeamName,
+                onValueChange = { battingTeamName = it },
+                label = { Text("Batting Team Name") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = teamBName,
-                onValueChange = { teamBName = it },
-                label = { Text("Team B Name") },
+                value = bowlingTeamName,
+                onValueChange = { bowlingTeamName = it },
+                label = { Text("Bowling Team Name") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (sport == "Cricket") {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = oversInput,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty()) {
+                            oversInput = newValue
+                            oversError = false
+                        } else {
+                            val intValue = newValue.toIntOrNull()
+                            if (intValue != null && intValue in 1..50) {
+                                oversInput = newValue
+                                oversError = false
+                            } else {
+                                oversError = true
+                            }
+                        }
+                    },
+                    label = { Text("Number of Overs (1-50)") },
+                    isError = oversError,
+                    supportingText = {
+                        if (oversError) {
+                            Text("Please enter overs between 1 and 50")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = onMatchStarted,
+                onClick = {
+                    val overs = oversInput.toFloatOrNull() ?: 10f
+                    onMatchStarted(battingTeamName, bowlingTeamName, overs)
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = tournamentName.isNotBlank() && teamAName.isNotBlank() && teamBName.isNotBlank()
+                enabled = tournamentName.isNotBlank() &&
+                        battingTeamName.isNotBlank() &&
+                        bowlingTeamName.isNotBlank()
             ) {
                 Text("Start Match 🎯")
             }

@@ -121,7 +121,9 @@ fun RoleSelectionScreen(
                     ) {
                         Button(
                             onClick = { showPinDialog = false },
-                            modifier = Modifier.weight(1f),
+                            Modifier
+                                .weight(1f)
+                                .padding(4.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                         ) {
                             Text("Cancel")
