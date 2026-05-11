@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class MatchState(
     val innings: Int,
@@ -62,6 +64,8 @@ fun LiveScoringScreen(
     oversLimit: Float = 10f,
     onMatchEnd: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     // ==================== CRICKET STATE ====================
     var currentInnings by remember { mutableIntStateOf(1) }
     var teamARuns by remember { mutableIntStateOf(0) }
@@ -230,29 +234,24 @@ fun LiveScoringScreen(
         } else {
             kabTeamBPoints += points
         }
-        // Auto switch raiding team
         raidingTeam = if (raidingTeam == 1) 2 else 1
     }
 
     fun handleDefendingBonus() {
-        // Defending team gets bonus point
         if (raidingTeam == 1) {
             kabTeamBPoints += 1
         } else {
             kabTeamAPoints += 1
         }
-        // Auto switch raiding team
         raidingTeam = if (raidingTeam == 1) 2 else 1
     }
 
     fun handleTackle() {
-        // Defending team gets 1 point for tackle
         if (raidingTeam == 1) {
             kabTeamBPoints += 1
         } else {
             kabTeamAPoints += 1
         }
-        // Auto switch raiding team
         raidingTeam = if (raidingTeam == 1) 2 else 1
     }
 
@@ -291,24 +290,18 @@ fun LiveScoringScreen(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "⚡ LIVE SCORE ⚡",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("⚡ LIVE SCORE ⚡", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(sport, color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // Team Scores Display - Fixed layout to prevent overlap
+        // Team Scores Display
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Team A Score Card
             Card(
                 modifier = Modifier.weight(1f).padding(4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF263238))
@@ -317,53 +310,24 @@ fun LiveScoringScreen(
                     modifier = Modifier.padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        teamAName,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(teamAName, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
                     when (sport) {
                         "Cricket" -> {
-                            Text(
-                                "${teamARuns}/${teamAWickets}",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Overs: ${currentOvers.toInt()}.${ballCounter}",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 10.sp
-                            )
+                            Text("${teamARuns}/${teamAWickets}", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Text("Overs: ${currentOvers.toInt()}.${ballCounter}", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
                         }
                         "Volleyball" -> {
-                            Text(
-                                "$teamAPoints",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Sets: $teamASets",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
+                            Text("$teamAPoints", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Text("Sets: $teamASets", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                         }
                         "Kabaddi" -> {
-                            Text(
-                                "$kabTeamAPoints",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("$kabTeamAPoints", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
-            // Team B Score Card
             Card(
                 modifier = Modifier.weight(1f).padding(4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF263238))
@@ -372,49 +336,21 @@ fun LiveScoringScreen(
                     modifier = Modifier.padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        teamBName,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(teamBName, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
                     when (sport) {
                         "Cricket" -> {
-                            Text(
-                                "${teamBRuns}/${teamBWickets}",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("${teamBRuns}/${teamBWickets}", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
                             if (currentInnings == 2 && matchResult == null) {
-                                Text(
-                                    "Need ${targetRuns - teamBRuns}",
-                                    color = Color(0xFFFF9800),
-                                    fontSize = 10.sp
-                                )
+                                Text("Need ${targetRuns - teamBRuns}", color = Color(0xFFFF9800), fontSize = 10.sp)
                             }
                         }
                         "Volleyball" -> {
-                            Text(
-                                "$teamBPoints",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Sets: $teamBSets",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
+                            Text("$teamBPoints", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Text("Sets: $teamBSets", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                         }
                         "Kabaddi" -> {
-                            Text(
-                                "$kabTeamBPoints",
-                                color = Color(0xFFFFEB3B),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("$kabTeamBPoints", color = Color(0xFFFFEB3B), fontSize = 32.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -426,18 +362,55 @@ fun LiveScoringScreen(
         // ==================== SPORT-SPECIFIC UI ====================
         when (sport) {
             "Cricket" -> {
-                if (matchResult == null) {
-                    Text(
-                        "🏏 CRICKET SCORING 🏏",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
+                var showManualDialog by remember { mutableStateOf(false) }
+                var manualRunsValue by remember { mutableStateOf("") }
 
-                    // Ball History
-                    Text("Recent Balls", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                if (matchResult == null) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Card(
+                            modifier = Modifier.weight(1f).padding(4.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (currentInnings == 1) Color(0xFF4CAF50) else Color(0xFF607D8B))
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🏏 BATTING", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(if (currentInnings == 1) teamAName else teamBName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                        Card(
+                            modifier = Modifier.weight(1f).padding(4.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (currentInnings == 1) Color(0xFFD32F2F) else Color(0xFF4CAF50))
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🎯 BOWLING", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(if (currentInnings == 1) teamBName else teamAName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF263238))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Text("📊 OVERS", fontSize = 12.sp, color = Color.Gray)
+                            Text("${currentOvers.toInt()}.${ballCounter}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFEB3B))
+                            Text("Target: $targetRuns", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text("📋 LAST 6 BALLS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         val ballsToShow = ballHistory.takeLast(6)
@@ -451,70 +424,149 @@ fun LiveScoringScreen(
                                 else -> Color.Gray
                             }
                             Box(
-                                modifier = Modifier.size(32.dp).background(ballColor, CircleShape),
+                                modifier = Modifier.size(40.dp).background(ballColor, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(ball, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(ball, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
                     }
 
-                    // Cricket Buttons
+                    Spacer(Modifier.height(8.dp))
+
+                    Text("🏏 RUN BUTTONS", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(onClick = { handleCricketRuns(0) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF607D8B))) { Text("0", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(1) }, modifier = Modifier.weight(1f)) { Text("1", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(2) }, modifier = Modifier.weight(1f)) { Text("2", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(3) }, modifier = Modifier.weight(1f)) { Text("3", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(4) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) { Text("4", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(6) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("6", fontSize = 12.sp) }
+                        Button(onClick = { handleCricketRuns(0) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF607D8B))) { Text("0", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(1) }, modifier = Modifier.weight(1f)) { Text("1", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(2) }, modifier = Modifier.weight(1f)) { Text("2", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(3) }, modifier = Modifier.weight(1f)) { Text("3", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(4) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) { Text("4", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(6) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("6", fontSize = 14.sp) }
                     }
-                    Spacer(Modifier.height(4.dp))
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text("🎯 EXTRAS & WICKETS", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(onClick = { handleCricketRuns(0, true) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("W", fontSize = 12.sp) }
-                        Button(onClick = { isFreeHit = true; showNoBallDialog = true }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("NB", fontSize = 12.sp) }
-                        Button(onClick = { handleCricketRuns(1, false, true) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("WD", fontSize = 12.sp) }
+                        Button(onClick = { handleCricketRuns(0, true) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) { Text("W", fontSize = 14.sp) }
+                        Button(onClick = { isFreeHit = true; showNoBallDialog = true }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("NB", fontSize = 14.sp) }
+                        Button(onClick = { handleCricketRuns(1, false, true) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) { Text("WD", fontSize = 14.sp) }
+                        Button(
+                            onClick = { showManualDialog = true },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0))
+                        ) { Text("📝", fontSize = 14.sp) }
                     }
-                    Spacer(Modifier.height(4.dp))
+
+                    Spacer(Modifier.height(8.dp))
+
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(onClick = { undoLastAction() }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF607D8B))) { Text("↩️ Undo", fontSize = 12.sp) }
-                        Button(onClick = { showEndMatchDialog = true }, modifier = Modifier.weight(2f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) { Text("🏁 End Match", fontSize = 12.sp) }
+                        Button(onClick = { undoLastAction() }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF607D8B))) { Text("↩️ UNDO", fontSize = 12.sp) }
+                        Button(onClick = { showEndMatchDialog = true }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) { Text("🏁 END MATCH", fontSize = 12.sp) }
+                    }
+
+                    if (currentInnings == 2 && targetRuns > 0) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "${if (currentInnings == 1) teamAName else teamBName} needs ${targetRuns - (if (currentInnings == 1) teamARuns else teamBRuns)} runs to win",
+                            fontSize = 12.sp,
+                            color = Color(0xFFFF9800),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    if (showManualDialog) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                showManualDialog = false
+                                manualRunsValue = ""
+                            },
+                            title = { Text("Manual Runs Entry") },
+                            text = {
+                                OutlinedTextField(
+                                    value = manualRunsValue,
+                                    onValueChange = {
+                                        if (it.isEmpty() || it.all { it.isDigit() }) {
+                                            manualRunsValue = it
+                                        }
+                                    },
+                                    label = { Text("Enter runs (0-99)") }
+                                )
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val runs = manualRunsValue.toIntOrNull()?.takeIf { it >= 0 } ?: 0
+                                        handleCricketRuns(runs, false, false)
+                                        showManualDialog = false
+                                        manualRunsValue = ""
+                                    }
+                                ) { Text("Add") }
+                            },
+                            dismissButton = {
+                                Button(onClick = {
+                                    showManualDialog = false
+                                    manualRunsValue = ""
+                                }) { Text("Cancel") }
+                            }
+                        )
                     }
                 } else {
-                    Button(onClick = { showEndMatchDialog = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
-                        Text("🏆 Show Result")
+                    Button(
+                        onClick = { showEndMatchDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Text("🏆 SHOW RESULT", fontSize = 14.sp)
                     }
                 }
             }
 
             "Volleyball" -> {
-                // Serving Team Toggle
+                Text("🏐 SERVING TEAM", fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(teamAName, fontWeight = if (servingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
-                    Switch(
-                        checked = servingTeam == 2,
-                        onCheckedChange = { isChecked -> servingTeam = if (isChecked) 2 else 1 },
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(teamBName, fontWeight = if (servingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Switch(
+                            checked = servingTeam == 1,
+                            onCheckedChange = { isChecked ->
+                                servingTeam = if (isChecked) 1 else 2
+                            }
+                        )
+                        Text(teamAName, fontSize = 12.sp, fontWeight = if (servingTeam == 1) FontWeight.Bold else FontWeight.Normal)
+                        Text("Serving", fontSize = 10.sp, color = Color.Gray)
+                    }
+
+                    Text("VS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Switch(
+                            checked = servingTeam == 2,
+                            onCheckedChange = { isChecked ->
+                                servingTeam = if (isChecked) 2 else 1
+                            }
+                        )
+                        Text(teamBName, fontSize = 12.sp, fontWeight = if (servingTeam == 2) FontWeight.Bold else FontWeight.Normal)
+                        Text("Serving", fontSize = 10.sp, color = Color.Gray)
+                    }
                 }
-                Text("🏐 SERVING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
 
                 Spacer(Modifier.height(8.dp))
 
-                // Set Status
                 Text(
                     "Sets: $teamASets - $teamBSets",
                     fontSize = 16.sp,
@@ -574,25 +626,40 @@ fun LiveScoringScreen(
             }
 
             "Kabaddi" -> {
-                // Raiding Team Toggle
+                Text("🤼 RAIDING TEAM", fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(teamAName, fontWeight = if (raidingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
-                    Switch(
-                        checked = raidingTeam == 2,
-                        onCheckedChange = { isChecked -> raidingTeam = if (isChecked) 2 else 1 },
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(teamBName, fontWeight = if (raidingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Switch(
+                            checked = raidingTeam == 1,
+                            onCheckedChange = { isChecked ->
+                                raidingTeam = if (isChecked) 1 else 2
+                            }
+                        )
+                        Text(teamAName, fontSize = 12.sp, fontWeight = if (raidingTeam == 1) FontWeight.Bold else FontWeight.Normal)
+                        Text("Raiding", fontSize = 10.sp, color = Color.Gray)
+                    }
+
+                    Text("VS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Switch(
+                            checked = raidingTeam == 2,
+                            onCheckedChange = { isChecked ->
+                                raidingTeam = if (isChecked) 2 else 1
+                            }
+                        )
+                        Text(teamBName, fontSize = 12.sp, fontWeight = if (raidingTeam == 2) FontWeight.Bold else FontWeight.Normal)
+                        Text("Raiding", fontSize = 10.sp, color = Color.Gray)
+                    }
                 }
-                Text("🤼 RAIDING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
 
                 Spacer(Modifier.height(4.dp))
 
-                // Timer and Target Score Display
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF263238))
@@ -601,7 +668,6 @@ fun LiveScoringScreen(
                         modifier = Modifier.padding(8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        // Timer
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             Text("⏱️ TIME", fontSize = 9.sp, color = Color.Gray)
                             Text(formatTime(matchTimeSeconds), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -615,7 +681,6 @@ fun LiveScoringScreen(
                             }
                         }
 
-                        // Target Score Display
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             Text("🎯 TARGET", fontSize = 9.sp, color = Color.Gray)
                             Text("$targetScore", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFEB3B))
@@ -629,7 +694,6 @@ fun LiveScoringScreen(
                 Spacer(Modifier.height(4.dp))
 
                 if (matchResult == null) {
-                    // Check if target score reached
                     val targetInt = targetScore.toIntOrNull() ?: 30
                     if (kabTeamAPoints >= targetInt || kabTeamBPoints >= targetInt) {
                         Text(
@@ -642,52 +706,38 @@ fun LiveScoringScreen(
                         )
                     }
 
-                    // RAIDING TEAM ACTIONS
                     Text("⚔️ RAIDING TEAM ACTIONS", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Button(
-                            onClick = { handleRaid(1) },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Touch", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) } }
-                        Button(
-                            onClick = { handleRaid(2) },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Bonus", fontSize = 10.sp); Text("+2", fontWeight = FontWeight.Bold) } }
-                        Button(
-                            onClick = { handleRaid(3) },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0))
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Super", fontSize = 10.sp); Text("+3", fontWeight = FontWeight.Bold) } }
-                        Button(
-                            onClick = { handleAllOut() },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("All Out", fontSize = 10.sp); Text("+2", fontWeight = FontWeight.Bold) } }
+                        Button(onClick = { handleRaid(1) }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Touch", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) }
+                        }
+                        Button(onClick = { handleRaid(2) }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Bonus", fontSize = 10.sp); Text("+2", fontWeight = FontWeight.Bold) }
+                        }
+                        Button(onClick = { handleRaid(3) }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0))) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Super", fontSize = 10.sp); Text("+3", fontWeight = FontWeight.Bold) }
+                        }
+                        Button(onClick = { handleAllOut() }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("All Out", fontSize = 10.sp); Text("+2", fontWeight = FontWeight.Bold) }
+                        }
                     }
 
                     Spacer(Modifier.height(4.dp))
 
-                    // DEFENDING TEAM ACTIONS
                     Text("🛡️ DEFENDING TEAM ACTIONS", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Button(
-                            onClick = { handleDefendingBonus() },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Bonus", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) } }
-                        Button(
-                            onClick = { handleTackle() },
-                            modifier = Modifier.weight(1f).height(55.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Tackle", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) } }
+                        Button(onClick = { handleDefendingBonus() }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Bonus", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) }
+                        }
+                        Button(onClick = { handleTackle() }, modifier = Modifier.weight(1f).height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Tackle", fontSize = 10.sp); Text("+1", fontWeight = FontWeight.Bold) }
+                        }
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -696,23 +746,17 @@ fun LiveScoringScreen(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(
-                            onClick = { declareKabaddiWinner() },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
-                        ) { Text("🏆 Declare Winner", fontSize = 12.sp) }
-                        Button(
-                            onClick = { showEndMatchDialog = true },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-                        ) { Text("🏁 End Match", fontSize = 12.sp) }
+                        Button(onClick = { declareKabaddiWinner() }, modifier = Modifier.weight(1f).height(48.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))) {
+                            Text("🏆 Declare Winner", fontSize = 12.sp)
+                        }
+                        Button(onClick = { showEndMatchDialog = true }, modifier = Modifier.weight(1f).height(48.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) {
+                            Text("🏁 End Match", fontSize = 12.sp)
+                        }
                     }
                 } else {
-                    Button(
-                        onClick = { showEndMatchDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                    ) { Text("🏆 Show Result") }
+                    Button(onClick = { showEndMatchDialog = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
+                        Text("🏆 Show Result")
+                    }
                 }
             }
         }
@@ -742,7 +786,12 @@ fun LiveScoringScreen(
                     noBallRuns = ""
                 }) { Text("Add") }
             },
-            dismissButton = { Button(onClick = { showNoBallDialog = false; noBallRuns = "" }) { Text("Cancel") } }
+            dismissButton = {
+                Button(onClick = {
+                    showNoBallDialog = false
+                    noBallRuns = ""
+                }) { Text("Cancel") }
+            }
         )
     }
 
@@ -800,7 +849,45 @@ fun LiveScoringScreen(
                     }
                 }
             },
-            confirmButton = { Button(onClick = { showEndMatchDialog = false; onMatchEnd() }) { Text("OK") } },
+            confirmButton = {
+                Button(onClick = {
+                    // Save match to Firebase
+                    scope.launch {
+                        val winnerText = when (sport) {
+                            "Cricket" -> if (teamARuns > teamBRuns) teamAName else if (teamBRuns > teamARuns) teamBName else "Tie"
+                            "Volleyball" -> if (teamASets > teamBSets) teamAName else if (teamBSets > teamASets) teamBName else "Tie"
+                            else -> if (kabTeamAPoints > kabTeamBPoints) teamAName else if (kabTeamBPoints > kabTeamAPoints) teamBName else "Tie"
+                        }
+
+                        val teamAScoreText = when (sport) {
+                            "Cricket" -> "$teamARuns/$teamAWickets"
+                            "Volleyball" -> "$teamAPoints points"
+                            else -> "$kabTeamAPoints points"
+                        }
+
+                        val teamBScoreText = when (sport) {
+                            "Cricket" -> "$teamBRuns/$teamBWickets"
+                            "Volleyball" -> "$teamBPoints points"
+                            else -> "$kabTeamBPoints points"
+                        }
+
+                        val storedMatch = StoredMatch(
+                            sport = sport,
+                            tournamentName = "Village Tournament",
+                            teamAName = teamAName,
+                            teamBName = teamBName,
+                            teamAScore = teamAScoreText,
+                            teamBScore = teamBScoreText,
+                            winner = winnerText,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        FirebaseManager.saveMatch(storedMatch)
+                    }
+
+                    showEndMatchDialog = false
+                    onMatchEnd()
+                }) { Text("OK") }
+            },
             dismissButton = { Button(onClick = { showEndMatchDialog = false }) { Text("Cancel") } }
         )
     }

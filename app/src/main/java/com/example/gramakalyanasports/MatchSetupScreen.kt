@@ -13,13 +13,28 @@ import androidx.compose.ui.unit.dp
 fun MatchSetupScreen(
     sport: String,
     onBackClicked: () -> Unit,
-    onMatchStarted: (battingTeam: String, bowlingTeam: String, overs: Float) -> Unit
+    onMatchStarted: (teamAName: String, teamBName: String, overs: Float) -> Unit
 ) {
-    var battingTeamName by remember { mutableStateOf("") }
-    var bowlingTeamName by remember { mutableStateOf("") }
+    var teamAName by remember { mutableStateOf("") }
+    var teamBName by remember { mutableStateOf("") }
     var tournamentName by remember { mutableStateOf("") }
     var oversInput by remember { mutableStateOf("10") }
     var oversError by remember { mutableStateOf(false) }
+
+    // Dynamic labels based on sport
+    val teamALabel = when (sport) {
+        "Cricket" -> "Batting Team Name"
+        "Volleyball" -> "Team A Name"
+        "Kabaddi" -> "Team A Name"
+        else -> "Team A Name"
+    }
+
+    val teamBLabel = when (sport) {
+        "Cricket" -> "Bowling Team Name"
+        "Volleyball" -> "Team B Name"
+        "Kabaddi" -> "Team B Name"
+        else -> "Team B Name"
+    }
 
     Column(
         modifier = Modifier
@@ -51,18 +66,18 @@ fun MatchSetupScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = battingTeamName,
-                onValueChange = { battingTeamName = it },
-                label = { Text("Batting Team Name") },
+                value = teamAName,
+                onValueChange = { teamAName = it },
+                label = { Text(teamALabel) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = bowlingTeamName,
-                onValueChange = { bowlingTeamName = it },
-                label = { Text("Bowling Team Name") },
+                value = teamBName,
+                onValueChange = { teamBName = it },
+                label = { Text(teamBLabel) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -100,13 +115,13 @@ fun MatchSetupScreen(
 
             Button(
                 onClick = {
-                    val overs = oversInput.toFloatOrNull() ?: 10f
-                    onMatchStarted(battingTeamName, bowlingTeamName, overs)
+                    val overs = if (sport == "Cricket") oversInput.toFloatOrNull() ?: 10f else 0f
+                    onMatchStarted(teamAName, teamBName, overs)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = tournamentName.isNotBlank() &&
-                        battingTeamName.isNotBlank() &&
-                        bowlingTeamName.isNotBlank()
+                        teamAName.isNotBlank() &&
+                        teamBName.isNotBlank()
             ) {
                 Text("Start Match 🎯")
             }

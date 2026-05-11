@@ -1,0 +1,247 @@
+Index: app/src/main/java/com/example/gramakalyanasports/FanViewScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/gramakalyanasports/FanViewScreen.kt b/app/src/main/java/com/example/gramakalyanasports/FanViewScreen.kt
+--- a/app/src/main/java/com/example/gramakalyanasports/FanViewScreen.kt
++++ b/app/src/main/java/com/example/gramakalyanasports/FanViewScreen.kt	(date 1778486492057)
+@@ -66,8 +66,7 @@
+                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                 Text("🏆 ${match.sport}", fontWeight = FontWeight.Bold, color = Color(0xFFFFEB3B))
+                                 Text(
+-                                    java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(match.timestamp),
+-                                    fontSize = 10.sp,
++                                    java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(match.timestamp.toLong()),                                    fontSize = 10.sp,
+                                     color = Color.Gray
+                                 )
+                             }
+Index: app/src/main/java/com/example/gramakalyanasports/FirebaseManager.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/gramakalyanasports/FirebaseManager.kt b/app/src/main/java/com/example/gramakalyanasports/FirebaseManager.kt
+--- a/app/src/main/java/com/example/gramakalyanasports/FirebaseManager.kt
++++ b/app/src/main/java/com/example/gramakalyanasports/FirebaseManager.kt	(date 1778486399026)
+@@ -12,7 +12,7 @@
+     val teamAScore: String = "",
+     val teamBScore: String = "",
+     val winner: String = "",
+-    val timestamp: Long = System.currentTimeMillis()
++    val timestamp: String = ""
+ )
+ 
+ object FirebaseManager {
+Index: app/src/main/java/com/example/gramakalyanasports/LiveScoringScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/gramakalyanasports/LiveScoringScreen.kt b/app/src/main/java/com/example/gramakalyanasports/LiveScoringScreen.kt
+--- a/app/src/main/java/com/example/gramakalyanasports/LiveScoringScreen.kt
++++ b/app/src/main/java/com/example/gramakalyanasports/LiveScoringScreen.kt	(date 1778489460529)
+@@ -84,12 +84,12 @@
+     var teamBPoints by remember { mutableIntStateOf(0) }
+     var teamASets by remember { mutableIntStateOf(0) }
+     var teamBSets by remember { mutableIntStateOf(0) }
+-    var servingTeam by remember { mutableIntStateOf(1) }  // 1=Team A serving, 2=Team B serving
++    var servingTeam by remember { mutableIntStateOf(1) }
+ 
+     // ==================== KABADDI STATE ====================
+     var kabTeamAPoints by remember { mutableIntStateOf(0) }
+     var kabTeamBPoints by remember { mutableIntStateOf(0) }
+-    var raidingTeam by remember { mutableIntStateOf(1) }  // 1=Team A raiding, 2=Team B raiding
++    var raidingTeam by remember { mutableIntStateOf(1) }
+     var matchTimeSeconds by remember { mutableIntStateOf(0) }
+     var isTimerRunning by remember { mutableStateOf(false) }
+     var targetScore by remember { mutableStateOf("30") }
+@@ -198,10 +198,10 @@
+     fun handleVolleyballPoint(teamScored: Int) {
+         if (teamScored == 1) {
+             teamAPoints++
+-            servingTeam = 1  // Team A gets serve
++            servingTeam = 1
+         } else {
+             teamBPoints++
+-            servingTeam = 2  // Team B gets serve
++            servingTeam = 2
+         }
+ 
+         if (teamAPoints >= 25 && teamAPoints - teamBPoints >= 2) {
+@@ -230,7 +230,7 @@
+         } else {
+             kabTeamBPoints += points
+         }
+-        // AUTO SWITCH RAIDING TEAM
++        // Auto switch raiding team
+         raidingTeam = if (raidingTeam == 1) 2 else 1
+     }
+ 
+@@ -241,7 +241,7 @@
+         } else {
+             kabTeamAPoints += 1
+         }
+-        // AUTO SWITCH RAIDING TEAM
++        // Auto switch raiding team
+         raidingTeam = if (raidingTeam == 1) 2 else 1
+     }
+ 
+@@ -252,7 +252,7 @@
+         } else {
+             kabTeamAPoints += 1
+         }
+-        // AUTO SWITCH RAIDING TEAM
++        // Auto switch raiding team
+         raidingTeam = if (raidingTeam == 1) 2 else 1
+     }
+ 
+@@ -303,7 +303,7 @@
+ 
+         Spacer(Modifier.height(16.dp))
+ 
+-        // Team Scores Display
++        // Team Scores Display - Fixed layout to prevent overlap
+         Row(
+             modifier = Modifier.fillMaxWidth(),
+             horizontalArrangement = Arrangement.SpaceEvenly
+@@ -495,32 +495,22 @@
+                 }
+             }
+ 
+-            // ==================== VOLLEYBALL SECTION WITH TOGGLE ====================
+             "Volleyball" -> {
+-                // ========== VOLLEYBALL TOGGLE - START ==========
+-                // This toggle shows which team is SERVING
+-                // When Switch is OFF (left) = Team A serving
+-                // When Switch is ON (right) = Team B serving
++                // Serving Team Toggle
+                 Row(
+                     modifier = Modifier.fillMaxWidth(),
+                     horizontalArrangement = Arrangement.SpaceEvenly,
+                     verticalAlignment = Alignment.CenterVertically
+                 ) {
+-                    // Team A name - Bold when serving
+                     Text(teamAName, fontWeight = if (servingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+-
+-                    // THE TOGGLE SWITCH - Changes serving team when tapped
+                     Switch(
+-                        checked = servingTeam == 2,  // ON when Team B serving
++                        checked = servingTeam == 2,
+                         onCheckedChange = { isChecked -> servingTeam = if (isChecked) 2 else 1 },
+                         modifier = Modifier.padding(horizontal = 8.dp)
+                     )
+-
+-                    // Team B name - Bold when serving
+                     Text(teamBName, fontWeight = if (servingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+                 }
+                 Text("🏐 SERVING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+-                // ========== VOLLEYBALL TOGGLE - END ==========
+ 
+                 Spacer(Modifier.height(8.dp))
+ 
+@@ -537,7 +527,28 @@
+                     fontSize = 14.sp,
+                     textAlign = TextAlign.Center,
+                     modifier = Modifier.fillMaxWidth()
+-                )
++                ) "Volleyball" -> {
++                    // ========== VOLLEYBALL TOGGLE STARTS HERE ==========
++                    Row(
++                        modifier = Modifier.fillMaxWidth(),
++                        horizontalArrangement = Arrangement.SpaceEvenly,
++                        verticalAlignment = Alignment.CenterVertically
++                    ) {
++                        // Team A name - Bold when serving
++                        Text(teamAName, fontWeight = if (servingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
++
++                        // THE TOGGLE SWITCH - Changes serving team when tapped
++                        Switch(
++                            checked = servingTeam == 2,  // ON when Team B serving
++                            onCheckedChange = { isChecked -> servingTeam = if (isChecked) 2 else 1 },
++                            modifier = Modifier.padding(horizontal = 8.dp)
++                        )
++
++                        // Team B name - Bold when serving
++                        Text(teamBName, fontWeight = if (servingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
++                    }
++                    Text("🏐 SERVING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
++                    // ========== VOLLEYBALL TOGGLE ENDS HERE ==========
+                 Text(
+                     "Target: 25 points (win by 2)",
+                     fontSize = 10.sp,
+@@ -583,32 +594,22 @@
+                 }
+             }
+ 
+-            // ==================== KABADDI SECTION WITH TOGGLE ====================
+             "Kabaddi" -> {
+-                // ========== KABADDI TOGGLE - START ==========
+-                // This toggle shows which team is RAIDING
+-                // When Switch is OFF (left) = Team A raiding
+-                // When Switch is ON (right) = Team B raiding
++                // Raiding Team Toggle
+                 Row(
+                     modifier = Modifier.fillMaxWidth(),
+                     horizontalArrangement = Arrangement.SpaceEvenly,
+                     verticalAlignment = Alignment.CenterVertically
+                 ) {
+-                    // Team A name - Bold when raiding
+                     Text(teamAName, fontWeight = if (raidingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+-
+-                    // THE TOGGLE SWITCH - Changes raiding team when tapped
+                     Switch(
+-                        checked = raidingTeam == 2,  // ON when Team B raiding
++                        checked = raidingTeam == 2,
+                         onCheckedChange = { isChecked -> raidingTeam = if (isChecked) 2 else 1 },
+                         modifier = Modifier.padding(horizontal = 8.dp)
+                     )
+-
+-                    // Team B name - Bold when raiding
+                     Text(teamBName, fontWeight = if (raidingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+                 }
+                 Text("🤼 RAIDING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+-                // ========== KABADDI TOGGLE - END ==========
+ 
+                 Spacer(Modifier.height(4.dp))
+ 
+@@ -645,9 +646,29 @@
+                         }
+                     }
+                 }
+-
+                 Spacer(Modifier.height(4.dp))
++                    "Kabaddi" -> {
++                    // ========== KABADDI TOGGLE STARTS HERE ==========
++                    Row(
++                        modifier = Modifier.fillMaxWidth(),
++                        horizontalArrangement = Arrangement.SpaceEvenly,
++                        verticalAlignment = Alignment.CenterVertically
++                    ) {
++                        // Team A name - Bold when raiding
++                        Text(teamAName, fontWeight = if (raidingTeam == 1) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+ 
++                        // THE TOGGLE SWITCH - Changes raiding team when tapped
++                        Switch(
++                            checked = raidingTeam == 2,  // ON when Team B raiding
++                            onCheckedChange = { isChecked -> raidingTeam = if (isChecked) 2 else 1 },
++                            modifier = Modifier.padding(horizontal = 8.dp)
++                        )
++
++                        // Team B name - Bold when raiding
++                        Text(teamBName, fontWeight = if (raidingTeam == 2) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
++                    }
++                    Text("🤼 RAIDING TEAM", fontSize = 10.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
++                    // ========== KABADDI TOGGLE ENDS HERE ==========
+                 if (matchResult == null) {
+                     // Check if target score reached
+                     val targetInt = targetScore.toIntOrNull() ?: 30
+@@ -823,5 +844,4 @@
+             confirmButton = { Button(onClick = { showEndMatchDialog = false; onMatchEnd() }) { Text("OK") } },
+             dismissButton = { Button(onClick = { showEndMatchDialog = false }) { Text("Cancel") } }
+         )
+-    }
+-}
+\ No newline at end of file
++    }
+\ No newline at end of file
