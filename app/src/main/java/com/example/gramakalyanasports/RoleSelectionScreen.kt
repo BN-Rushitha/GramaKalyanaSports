@@ -102,7 +102,7 @@ fun RoleSelectionScreen(
                                 showError = false
                             }
                         },
-                        label = { Text("Enter 4-digit PIN") },
+                        label = { Text("Enter 4-digit PIN (Example:1234)") },
                         visualTransformation = PasswordVisualTransformation(),
                         isError = showError,
                         modifier = Modifier.fillMaxWidth(),

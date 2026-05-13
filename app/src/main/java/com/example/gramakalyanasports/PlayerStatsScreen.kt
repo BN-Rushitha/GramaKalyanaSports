@@ -1,5 +1,6 @@
 package com.example.gramakalyanasports
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PlayerStatsScreen(onBackClicked: () -> Unit) {
+    val context = LocalContext.current
     var matches by remember { mutableStateOf<List<StoredMatch>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
@@ -83,6 +86,7 @@ fun PlayerStatsScreen(onBackClicked: () -> Unit) {
                     Text("Player", fontWeight = FontWeight.Bold, color = Color.White)
                     Text("Points", fontWeight = FontWeight.Bold, color = Color.White)
                     Text("Wins", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Share", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
 
@@ -94,11 +98,37 @@ fun PlayerStatsScreen(onBackClicked: () -> Unit) {
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(name, color = Color.White, fontWeight = FontWeight.Medium)
-                            Text("$points", color = Color(0xFFFFEB3B), fontWeight = FontWeight.Bold)
-                            Text("$wins", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                            Text(name, color = Color.White, fontWeight = FontWeight.Medium, modifier = Modifier.weight(2f))
+                            Text("$points", color = Color(0xFFFFEB3B), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text("$wins", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+
+                            // Share Button for each player
+                            Button(
+                                onClick = {
+                                    val shareText = "🏆 Player Stats 🏆\n\nPlayer: $name\nTotal Points: $points\nTotal Wins: $wins"
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, shareText)
+                                        setPackage("com.whatsapp")
+                                    }
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, shareText)
+                                        }
+                                        context.startActivity(Intent.createChooser(fallbackIntent, "Share via"))
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
+                            ) {
+                                Text("📤", fontSize = 14.sp)
+                            }
                         }
                     }
                 }

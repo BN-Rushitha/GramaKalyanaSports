@@ -1,5 +1,9 @@
 package com.example.gramakalyanasports
 
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +69,7 @@ fun LiveScoringScreen(
     onMatchEnd: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // ==================== CRICKET STATE ====================
     var currentInnings by remember { mutableIntStateOf(1) }
@@ -98,6 +103,40 @@ fun LiveScoringScreen(
     var isTimerRunning by remember { mutableStateOf(false) }
     var targetScore by remember { mutableStateOf("30") }
     var showTargetDialog by remember { mutableStateOf(false) }
+
+    // ==================== FIREBASE LIVE SCORE UPDATE ====================
+    fun updateLiveScoreInFirebase() {
+        scope.launch {
+            try {
+                val allMatches = FirebaseManager.getAllMatches()
+                val liveMatches = allMatches.filter { it.live }
+                if (liveMatches.isEmpty()) {
+                    return@launch
+                }
+                liveMatches.forEach { match ->
+                    val teamAScoreText = when (sport) {
+                        "Cricket" -> "$teamARuns/$teamAWickets"
+                        "Volleyball" -> "$teamAPoints points"
+                        else -> "$kabTeamAPoints points"
+                    }
+
+                    val teamBScoreText = when (sport) {
+                        "Cricket" -> "$teamBRuns/$teamBWickets"
+                        "Volleyball" -> "$teamBPoints points"
+                        else -> "$kabTeamBPoints points"
+                    }
+
+                    val updatedMatch = match.copy(
+                        teamAScore = teamAScoreText,
+                        teamBScore = teamBScoreText
+                    )
+                    FirebaseManager.updateMatch(updatedMatch)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     // Timer effect
     LaunchedEffect(isTimerRunning) {
@@ -196,6 +235,7 @@ fun LiveScoringScreen(
         if (currentInnings == 2 && teamBRuns >= targetRuns && matchResult == null) {
             matchResult = "$teamBName won by ${10 - teamBWickets} wickets"
         }
+        updateLiveScoreInFirebase()
     }
 
     // ==================== VOLLEYBALL FUNCTIONS ====================
@@ -225,6 +265,7 @@ fun LiveScoringScreen(
         } else if (teamBSets == 2) {
             matchResult = "$teamBName won the match (${teamBSets}-$teamASets sets)"
         }
+        updateLiveScoreInFirebase()
     }
 
     // ==================== KABADDI FUNCTIONS ====================
@@ -235,6 +276,7 @@ fun LiveScoringScreen(
             kabTeamBPoints += points
         }
         raidingTeam = if (raidingTeam == 1) 2 else 1
+        updateLiveScoreInFirebase()
     }
 
     fun handleDefendingBonus() {
@@ -244,6 +286,7 @@ fun LiveScoringScreen(
             kabTeamAPoints += 1
         }
         raidingTeam = if (raidingTeam == 1) 2 else 1
+        updateLiveScoreInFirebase()
     }
 
     fun handleTackle() {
@@ -253,6 +296,7 @@ fun LiveScoringScreen(
             kabTeamAPoints += 1
         }
         raidingTeam = if (raidingTeam == 1) 2 else 1
+        updateLiveScoreInFirebase()
     }
 
     fun handleAllOut() {
@@ -262,6 +306,7 @@ fun LiveScoringScreen(
             kabTeamBPoints += 2
         }
         raidingTeam = if (raidingTeam == 1) 2 else 1
+        updateLiveScoreInFirebase()
     }
 
     fun declareKabaddiWinner() {
@@ -851,39 +896,60 @@ fun LiveScoringScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    // Save match to Firebase
+                    // Save match to Firebase and mark as not live
                     scope.launch {
-                        val winnerText = when (sport) {
-                            "Cricket" -> if (teamARuns > teamBRuns) teamAName else if (teamBRuns > teamARuns) teamBName else "Tie"
-                            "Volleyball" -> if (teamASets > teamBSets) teamAName else if (teamBSets > teamASets) teamBName else "Tie"
-                            else -> if (kabTeamAPoints > kabTeamBPoints) teamAName else if (kabTeamBPoints > kabTeamAPoints) teamBName else "Tie"
-                        }
+                        try {
+                            val winnerText = when (sport) {
+                                "Cricket" -> if (teamARuns > teamBRuns) teamAName else if (teamBRuns > teamARuns) teamBName else "Tie"
+                                "Volleyball" -> if (teamASets > teamBSets) teamAName else if (teamBSets > teamASets) teamBName else "Tie"
+                                else -> if (kabTeamAPoints > kabTeamBPoints) teamAName else if (kabTeamBPoints > kabTeamAPoints) teamBName else "Tie"
+                            }
 
-                        val teamAScoreText = when (sport) {
-                            "Cricket" -> "$teamARuns/$teamAWickets"
-                            "Volleyball" -> "$teamAPoints points"
-                            else -> "$kabTeamAPoints points"
-                        }
+                            val teamAScoreText = when (sport) {
+                                "Cricket" -> "$teamARuns/$teamAWickets"
+                                "Volleyball" -> "$teamAPoints points"
+                                else -> "$kabTeamAPoints points"
+                            }
 
-                        val teamBScoreText = when (sport) {
-                            "Cricket" -> "$teamBRuns/$teamBWickets"
-                            "Volleyball" -> "$teamBPoints points"
-                            else -> "$kabTeamBPoints points"
-                        }
+                            val teamBScoreText = when (sport) {
+                                "Cricket" -> "$teamBRuns/$teamBWickets"
+                                "Volleyball" -> "$teamBPoints points"
+                                else -> "$kabTeamBPoints points"
+                            }
 
-                        val storedMatch = StoredMatch(
-                            sport = sport,
-                            tournamentName = "Village Tournament",
-                            teamAName = teamAName,
-                            teamBName = teamBName,
-                            teamAScore = teamAScoreText,
-                            teamBScore = teamBScoreText,
-                            winner = winnerText,
-                            timestamp = System.currentTimeMillis()
-                        )
-                        FirebaseManager.saveMatch(storedMatch)
+                            // Mark existing live match as not live
+                            val allMatches = FirebaseManager.getAllMatches()
+                            val liveMatch = allMatches.find { it.live }
+                            liveMatch?.let {
+                                val endedMatch = it.copy(
+                                    live = false,
+                                    teamAScore = teamAScoreText,
+                                    teamBScore = teamBScoreText,
+                                    winner = winnerText
+                                )
+                                FirebaseManager.updateMatch(endedMatch)
+                            }
+
+                            // Share result on WhatsApp
+                            val shareText = "🏆 Match Result 🏆\n\n$teamAName vs $teamBName\nScore: $teamAScoreText - $teamBScoreText\nWinner: $winnerText"
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                setPackage("com.whatsapp")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                }
+                                context.startActivity(Intent.createChooser(fallbackIntent, "Share via"))
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
-
                     showEndMatchDialog = false
                     onMatchEnd()
                 }) { Text("OK") }

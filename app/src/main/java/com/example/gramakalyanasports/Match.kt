@@ -11,7 +11,7 @@ data class Match(
     val teamA: Team = Team(),
     val teamB: Team = Team(),
     val currentScore: Score = Score(),
-    val isLive: Boolean = false,
+    val live: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
 

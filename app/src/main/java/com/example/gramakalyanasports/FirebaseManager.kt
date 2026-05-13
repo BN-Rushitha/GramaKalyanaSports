@@ -12,6 +12,7 @@ data class StoredMatch(
     val teamAScore: String = "",
     val teamBScore: String = "",
     val winner: String = "",
+    val live: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -25,14 +26,18 @@ object FirebaseManager {
         return matchId
     }
 
+    suspend fun updateMatch(match: StoredMatch) {
+        database.child("matches").child(match.matchId).setValue(match).await()
+    }
+
     suspend fun getAllMatches(): List<StoredMatch> {
         val snapshot = database.child("matches").get().await()
         return snapshot.children.mapNotNull { it.getValue(StoredMatch::class.java) }
             .sortedByDescending { it.timestamp }
     }
 
-    suspend fun getLiveMatch(matchId: String): StoredMatch? {
-        val snapshot = database.child("matches").child(matchId).get().await()
-        return snapshot.getValue(StoredMatch::class.java)
+    suspend fun getLiveMatch(): StoredMatch? {
+        val allMatches = getAllMatches()
+        return allMatches.find { it.live }
     }
 }

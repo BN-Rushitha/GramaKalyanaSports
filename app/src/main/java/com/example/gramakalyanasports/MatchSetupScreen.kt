@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @Composable
 fun MatchSetupScreen(
@@ -15,6 +17,8 @@ fun MatchSetupScreen(
     onBackClicked: () -> Unit,
     onMatchStarted: (teamAName: String, teamBName: String, overs: Float) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     var teamAName by remember { mutableStateOf("") }
     var teamBName by remember { mutableStateOf("") }
     var tournamentName by remember { mutableStateOf("") }
@@ -116,6 +120,23 @@ fun MatchSetupScreen(
             Button(
                 onClick = {
                     val overs = if (sport == "Cricket") oversInput.toFloatOrNull() ?: 10f else 0f
+
+                    // Save LIVE match to Firebase
+                    scope.launch {
+                        val liveMatch = StoredMatch(
+                            sport = sport,
+                            tournamentName = tournamentName,
+                            teamAName = teamAName,
+                            teamBName = teamBName,
+                            teamAScore = "0",
+                            teamBScore = "0",
+                            winner = "",
+                            live = true,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        FirebaseManager.saveMatch(liveMatch)
+                        println("✅ Match saved with Live = ${liveMatch.live}")
+                    }
                     onMatchStarted(teamAName, teamBName, overs)
                 },
                 modifier = Modifier.fillMaxWidth(),
